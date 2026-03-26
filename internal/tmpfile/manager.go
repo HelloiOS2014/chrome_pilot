@@ -25,6 +25,25 @@ func NewManager(dir string, maxAge time.Duration) (*Manager, error) {
 	return &Manager{dir: dir, maxAge: maxAge}, nil
 }
 
+// SaveScreenshot decodes a base64 PNG data URL and saves it as a timestamped
+// PNG file in the managed directory. Returns the absolute path to the saved file.
+func (m *Manager) SaveScreenshot(dataURL string) (string, error) {
+	idx := strings.Index(dataURL, ",")
+	if idx < 0 {
+		return "", fmt.Errorf("invalid data URL")
+	}
+	data, err := base64.StdEncoding.DecodeString(dataURL[idx+1:])
+	if err != nil {
+		return "", fmt.Errorf("decode base64: %w", err)
+	}
+	filename := fmt.Sprintf("screenshot-%s.png", time.Now().Format("20060102-150405"))
+	path := filepath.Join(m.dir, filename)
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return "", fmt.Errorf("write screenshot: %w", err)
+	}
+	return path, nil
+}
+
 // DryRun returns the number of files and total bytes that would be deleted
 // if Clean were called with the same duration.
 func (m *Manager) DryRun(olderThan time.Duration) (count int, size int64) {
@@ -110,6 +129,7 @@ func (m *Manager) CleanAll() (count int, freed int64, firstErr error) {
 }
 
 // AutoClean deletes files older than the maxAge configured at construction time.
-func (m *Manager) AutoClean() (count int, freed int64, err error) {
-	return m.Clean(m.maxAge)
+// Errors are silently ignored — this is intended for background cleanup.
+func (m *Manager) AutoClean() {
+	m.Clean(m.maxAge) //nolint:errcheck
 }
