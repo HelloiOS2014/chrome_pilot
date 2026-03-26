@@ -1,8 +1,7 @@
 version: 2
 
 builds:
-  - id: chrome-pilot
-    main: .
+  - main: .
     binary: chrome-pilot
     env:
       - CGO_ENABLED=0
@@ -16,10 +15,7 @@ builds:
       - -s -w
 
 archives:
-  - id: binary
-    builds:
-      - chrome-pilot
-    format: tar.gz
+  - format: tar.gz
     name_template: "chrome-pilot_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
@@ -28,13 +24,4 @@ archives:
       - extension/**/*
 
 checksum:
-  name_template: "checksums.txt"
-
-release:
-  github:
-    owner: HelloiOS2014
-    name: chrome_pilot
-  draft: false
-  prerelease: auto
-  extra_files:
-    - glob: /tmp/extension.zip
+  name_template: checksums.txt
