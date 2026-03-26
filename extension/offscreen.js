@@ -145,6 +145,21 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     sendResponse({ alive: true, connected: isConnected });
     return true;
   }
+
+  if (message.type === 'send-event') {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        id: null,
+        event: message.event,
+        data: message.data,
+      }));
+      sendResponse({ ok: true });
+    } else {
+      console.warn('[offscreen] Cannot send event – WebSocket not open');
+      sendResponse({ ok: false, error: 'not connected' });
+    }
+    return true;
+  }
 });
 
 // ─── Bootstrap ────────────────────────────────────────────────────────────

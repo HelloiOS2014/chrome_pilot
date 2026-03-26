@@ -118,6 +118,20 @@ func (d *Daemon) Start() error {
 		}
 	})
 
+	// Periodically expire snapshots that have not been accessed recently.
+	go func() {
+		ticker := time.NewTicker(60 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				d.snapStore.ExpireOlderThan(10 * time.Minute)
+			case <-d.done:
+				return
+			}
+		}
+	}()
+
 	// Register WS event handler to clear snapshots on navigation/close.
 	d.wsServer.SetOnEvent(func(event string, data json.RawMessage) {
 		switch event {
