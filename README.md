@@ -31,30 +31,27 @@ Chrome Extension (Manifest V3)
 
 ## 安装
 
-### 快速安装（推荐）
+### 一键安装（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/HelloiOS2014/chrome_pilot/main/install.sh | bash
+```
+
+自动检测平台，从 [GitHub Releases](https://github.com/HelloiOS2014/chrome_pilot/releases/latest) 下载预编译包，交互式引导完成安装。无需 Go 环境。
+
+指定版本：`bash install.sh --version v0.2.0`
+
+卸载：`bash install.sh --uninstall`
+
+### 从源码构建（开发者）
 
 ```bash
 git clone git@github.com:HelloiOS2014/chrome_pilot.git
 cd chrome_pilot
-bash install.sh
-```
-
-交互式安装脚本会引导你完成：构建、安装到 PATH、Skills 安装、Extension 加载。
-
-### 手动安装
-
-```bash
-# 1. 构建
 go build -o chrome-pilot .
-
-# 2. 安装到 PATH（可选）
 sudo cp chrome-pilot /usr/local/bin/
-
-# 3. 安装 Skill（可选）
 cp -R skills/chrome-pilot ~/.claude/skills/
-
-# 4. 加载 Chrome Extension
-#    Chrome → chrome://extensions → 开发者模式 → 加载已解压的扩展程序 → 选择 extension/ 目录
+# Chrome → chrome://extensions → 开发者模式 → 加载已解压的扩展程序 → 选择 extension/ 目录
 ```
 
 ## 快速开始
