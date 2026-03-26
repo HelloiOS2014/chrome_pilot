@@ -3,6 +3,8 @@ module github.com/joyy/chrome-pilot
 go 1.24.10
 
 require (
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
