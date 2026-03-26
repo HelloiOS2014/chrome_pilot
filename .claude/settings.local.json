@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "Bash(xargs ls:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(curl -s https://api.github.com/repos/microsoft/playwright-mcp/git/trees/main?recursive=1)",
+      "Bash(python3 -c \":*)",
+      "Bash(gh api:*)",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright-mcp/contents/packages/playwright-mcp/src\")",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright/contents/packages/playwright/src/mcp\")",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright/contents/packages/playwright/src\")",
+      "Bash(curl -s \"https://api.github.com/search/code?q=repo:microsoft/playwright+filename:mcp+language:typescript&per_page=30\" -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -s \"https://api.github.com/search/code?q=repo:microsoft/playwright+mcp+extension:ts&per_page=20\" -H \"Accept: application/vnd.github.v3+json\")",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright/contents/packages/playwright-core/src/tools\")",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright/contents/packages/playwright-core/src/tools/mcp\")",
+      "Bash(curl -s \"https://api.github.com/repos/microsoft/playwright/git/trees/main?recursive=1\")",
+      "Bash(git init:*)",
+      "Bash(go mod:*)",
+      "Bash(go get:*)",
+      "Bash(go build:*)",
+      "Bash(./chrome-pilot --help)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
