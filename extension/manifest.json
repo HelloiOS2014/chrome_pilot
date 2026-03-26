@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Chrome Pilot",
+  "version": "0.1.0",
+  "description": "Bridge between Chrome and chrome-pilot daemon",
+  "permissions": ["tabs", "activeTab", "scripting", "cookies", "debugger", "downloads", "offscreen", "alarms", "storage"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup/popup.html" }
+}
