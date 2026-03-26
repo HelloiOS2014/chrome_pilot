@@ -37,4 +37,4 @@ release:
   draft: false
   prerelease: auto
   extra_files:
-    - glob: dist/extension.zip
+    - glob: /tmp/extension.zip

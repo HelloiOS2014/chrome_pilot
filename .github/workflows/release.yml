@@ -21,7 +21,7 @@ jobs:
           go-version: "1.25"
 
       - name: Package Chrome Extension
-        run: mkdir -p dist && cd extension && zip -r ../dist/extension.zip . && cd ..
+        run: cd extension && zip -r /tmp/extension.zip . && cd ..
 
       - uses: goreleaser/goreleaser-action@v6
         with:
