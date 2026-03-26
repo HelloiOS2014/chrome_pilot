@@ -1,17 +1,19 @@
 # Chrome Pilot
 
-让 Claude Code 操控你现有的 Chrome 浏览器，保留登录态和所有配置。
+Control your existing Chrome browser from Claude Code — preserving login sessions, cookies, and all configurations.
 
-## 为什么需要这个？
+[中文文档](README_CN.md)
 
-现有的浏览器 MCP 工具（如 Playwright MCP）都会启动**新的** Chrome 实例，导致：
-- 登录态丢失，内部系统（Jira、Sentry、运维平台等）每次都要重新登录
-- Cookie、扩展、配置全部丢失
-- 无法操作需要 VPN/SSO 认证的页面
+## Why?
 
-Chrome Pilot 通过 Chrome Extension 直接连接你**正在使用的** Chrome，一切状态原样保留。
+Existing browser MCP tools (e.g., Playwright MCP) launch a **new** Chrome instance, which means:
+- Login sessions are lost — internal systems (Jira, Sentry, admin panels) require re-authentication every time
+- Cookies, extensions, and settings are gone
+- Pages behind VPN/SSO are inaccessible
 
-## 架构
+Chrome Pilot connects directly to your **running** Chrome via a Chrome Extension. Everything stays as-is.
+
+## Architecture
 
 ```
 Claude Code
@@ -21,29 +23,27 @@ Go CLI (Cobra)
   │ JSON-RPC 2.0 / Unix Socket
   ▼
 Go Daemon (:9333)
-  │ WebSocket (token 自动认证)
+  │ WebSocket (auto token auth)
   ▼
 Chrome Extension (Manifest V3)
-  ├─ offscreen.js  → 持久 WebSocket 连接
-  ├─ background.js → Chrome API 调用
-  └─ content.js    → DOM 操作 / 可访问性快照
+  ├─ offscreen.js  → persistent WebSocket connection
+  ├─ background.js → Chrome API calls
+  └─ content.js    → DOM operations / accessibility snapshots
 ```
 
-## 安装
+## Install
 
-### 一键安装（推荐）
+### One-liner (recommended)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/HelloiOS2014/chrome_pilot/main/install.sh | bash
 ```
 
-自动检测平台，从 [GitHub Releases](https://github.com/HelloiOS2014/chrome_pilot/releases/latest) 下载预编译包，交互式引导完成安装。无需 Go 环境。
+Auto-detects platform, downloads pre-built binaries from [GitHub Releases](https://github.com/HelloiOS2014/chrome_pilot/releases/latest), and guides you through setup. No Go required.
 
-指定版本：`bash install.sh --version v0.2.0`
+Options: `bash install.sh --version v0.2.0` | `bash install.sh --uninstall`
 
-卸载：`bash install.sh --uninstall`
-
-### 从源码构建（开发者）
+### Build from source (developers)
 
 ```bash
 git clone git@github.com:HelloiOS2014/chrome_pilot.git
@@ -51,141 +51,141 @@ cd chrome_pilot
 go build -o chrome-pilot .
 sudo cp chrome-pilot /usr/local/bin/
 cp -R skills/chrome-pilot ~/.claude/skills/
-# Chrome → chrome://extensions → 开发者模式 → 加载已解压的扩展程序 → 选择 extension/ 目录
+# Chrome → chrome://extensions → Developer mode → Load unpacked → select extension/ directory
 ```
 
-## 快速开始
+## Quick Start
 
 ```bash
-# 1. 启动守护进程
+# 1. Start the daemon
 chrome-pilot start
 
-# 2. 在 Chrome 加载 extension/ 目录（首次安装后自动连接）
+# 2. Load the extension in Chrome (auto-connects after first install)
 
-# 3. 检查连接
+# 3. Check connection
 chrome-pilot status
 # {"daemon":"running","pid":12345,"extension":"connected","ws_port":9333}
 
-# 4. 获取页面快照
+# 4. Take a page snapshot
 chrome-pilot snapshot
-# 返回页面结构摘要（landmarks、headings、可交互元素数量）
+# Returns page structure summary (landmarks, headings, interactable element count)
 
-# 5. 展开并操作
-chrome-pilot snapshot --ref e2          # 展开某个区域
-chrome-pilot dom click --ref e5         # 点击元素
-chrome-pilot dom type --ref e3 --text "hello"  # 输入文本
+# 5. Explore and interact
+chrome-pilot snapshot --ref e2          # expand a region
+chrome-pilot dom click --ref e5         # click an element
+chrome-pilot dom type --ref e3 --text "hello"  # type text
 
-# 6. 停止
+# 6. Stop
 chrome-pilot stop
 ```
 
-## 命令参考
+## Command Reference
 
-### 连接管理
+### Connection
 
-| 命令 | 说明 |
-|------|------|
-| `start` | 启动 daemon（后台运行） |
-| `start --foreground` | 前台运行 daemon |
-| `stop` | 停止 daemon |
-| `status` | 查看 daemon + extension 连接状态 |
+| Command | Description |
+|---------|-------------|
+| `start` | Start daemon (background) |
+| `start --foreground` | Start daemon in foreground |
+| `stop` | Stop daemon |
+| `status` | Show daemon + extension connection status |
 
-### Tab 管理
+### Tabs
 
-| 命令 | 说明 |
-|------|------|
-| `tab list` | 列出所有 tab |
-| `tab new <url>` | 新开 tab |
-| `tab select <index>` | 切换 tab |
-| `tab close [index]` | 关闭 tab |
+| Command | Description |
+|---------|-------------|
+| `tab list` | List all open tabs |
+| `tab new <url>` | Open a new tab |
+| `tab select <index>` | Switch to a tab |
+| `tab close [index]` | Close a tab |
 
-### 快照（分层检索）
+### Snapshot (layered retrieval)
 
-| 命令 | 说明 |
-|------|------|
-| `snapshot` | 拍快照，返回摘要 |
-| `snapshot --ref E1` | 展开指定子树 |
-| `snapshot --ref E1 --depth 2` | 限制展开深度 |
-| `snapshot --search "text"` | 文本搜索 |
-| `snapshot --role button` | 按 ARIA role 过滤 |
-| `snapshot --interactable` | 只看可交互元素 |
-| `snapshot info` | 查看快照缓存状态 |
-| `snapshot clear` | 清除快照缓存 |
+| Command | Description |
+|---------|-------------|
+| `snapshot` | Capture snapshot, return summary |
+| `snapshot --ref E1` | Expand subtree |
+| `snapshot --ref E1 --depth 2` | Expand with depth limit |
+| `snapshot --search "text"` | Search by text |
+| `snapshot --role button` | Filter by ARIA role |
+| `snapshot --interactable` | Show interactable elements only |
+| `snapshot info` | Show snapshot cache status |
+| `snapshot clear` | Clear snapshot cache |
 
-### DOM 交互（基于 ref）
+### DOM Interaction (ref-based)
 
-| 命令 | 说明 |
-|------|------|
-| `dom click --ref E1 [--button left\|right] [--double]` | 点击 |
-| `dom type --ref E1 --text "..." [--slowly] [--submit]` | 输入文本 |
-| `dom hover --ref E1` | 悬停 |
-| `dom drag --start-ref E1 --end-ref E2` | 拖拽 |
-| `dom key <key>` | 按键 |
-| `dom select --ref E1 --values "v1,v2"` | 下拉选择 |
-| `dom fill --fields '<json>'` | 批量填表 |
-| `dom upload --paths "path1,path2"` | 文件上传 |
-| `dom eval --js "() => ..." [--ref E1]` | 执行 JS |
+| Command | Description |
+|---------|-------------|
+| `dom click --ref E1 [--button left\|right] [--double]` | Click |
+| `dom type --ref E1 --text "..." [--slowly] [--submit]` | Type text |
+| `dom hover --ref E1` | Hover |
+| `dom drag --start-ref E1 --end-ref E2` | Drag and drop |
+| `dom key <key>` | Press key |
+| `dom select --ref E1 --values "v1,v2"` | Select dropdown option |
+| `dom fill --fields '<json>'` | Fill multiple form fields |
+| `dom upload --paths "path1,path2"` | Upload files |
+| `dom eval --js "() => ..." [--ref E1]` | Execute JavaScript |
 
-### 页面操作
+### Page Operations
 
-| 命令 | 说明 |
-|------|------|
-| `page navigate <url>` | 导航 |
-| `page back` | 后退 |
-| `page screenshot [--full] [--ref E1] [--file path]` | 截图 |
-| `page wait --text "..." / --time N` | 等待条件 |
-| `page console [--level info]` | 控制台日志 |
-| `page network [--include-static]` | 网络请求 |
-| `page content [--format html\|text]` | 获取页面内容 |
-| `page resize --width W --height H` | 调整窗口 |
-| `page dialog --accept [--text "..."]` | 处理弹窗 |
-| `page close` | 关闭页面 |
+| Command | Description |
+|---------|-------------|
+| `page navigate <url>` | Navigate |
+| `page back` | Go back |
+| `page screenshot [--full] [--ref E1] [--file path]` | Screenshot |
+| `page wait --text "..." / --time N` | Wait for condition |
+| `page console [--level info]` | Console messages |
+| `page network [--include-static]` | Network requests |
+| `page content [--format html\|text]` | Get page content |
+| `page resize --width W --height H` | Resize window |
+| `page dialog --accept [--text "..."]` | Handle dialog |
+| `page close` | Close page |
 
-### 数据读取
+### Data
 
-| 命令 | 说明 |
-|------|------|
-| `cookie list [--domain X]` | 列出 Cookie |
-| `cookie get --name X --domain X` | 获取指定 Cookie |
+| Command | Description |
+|---------|-------------|
+| `cookie list [--domain X]` | List cookies |
+| `cookie get --name X --domain X` | Get a cookie |
 
-### 清理
+### Cleanup
 
-| 命令 | 说明 |
-|------|------|
-| `clean` | 清理所有临时文件（截图等） |
-| `clean --before 3d` | 清理 3 天前的文件 |
-| `clean --dry-run` | 预览清理量 |
+| Command | Description |
+|---------|-------------|
+| `clean` | Clean all temp files |
+| `clean --before 3d` | Clean files older than 3 days |
+| `clean --dry-run` | Preview cleanup |
 
-所有页面/DOM/快照命令支持 `--tab <tabID>` 指定目标 tab。
+All page/DOM/snapshot commands support `--tab <tabID>` to target a specific tab.
 
-## 核心工作流
+## Core Workflow
 
 ```
-snapshot(摘要) → 展开/检索目标区域 → 操作元素 → snapshot(验证结果)
+snapshot (summary) → expand/search target area → interact → snapshot (verify)
 ```
 
-1. `snapshot` 返回页面结构摘要，不会返回全部内容（避免 token 爆炸）
-2. 用 `--ref`/`--search`/`--role` 按需展开需要的部分
-3. 用 ref 标识（如 `e1`, `e5`）操作具体元素
-4. 操作后再次 `snapshot` 查看增量变化
+1. `snapshot` returns a page structure summary, not the full content (avoids token explosion)
+2. Use `--ref`/`--search`/`--role` to drill into the parts you need
+3. Use ref identifiers (e.g., `e1`, `e5`) to interact with specific elements
+4. Re-snapshot after operations to see incremental changes
 
 ## Chrome Extension
 
-### 加载方法
+### Loading
 
-1. 打开 `chrome://extensions`
-2. 开启**开发者模式**
-3. 点击**加载已解压的扩展程序**
-4. 选择本项目的 `extension/` 目录
+1. Open `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked**
+4. Select the `~/.chrome-pilot/extension/` directory (or `extension/` if building from source)
 
-### 工作原理
+### How It Works
 
-- **offscreen.js** — 持久化 WebSocket 连接（解决 MV3 Service Worker 30s 休眠问题）
-- **background.js** — 命令路由，调用 Chrome API（tabs/cookies/scripting）
-- **content.js** — 注入页面执行 DOM 操作，生成可访问性快照，通过 `data-cp-ref` 属性标记元素
+- **offscreen.js** — Persistent WebSocket connection (solves MV3 Service Worker 30s sleep issue)
+- **background.js** — Command routing, Chrome API calls (tabs/cookies/scripting)
+- **content.js** — Injected into pages for DOM operations, accessibility snapshots, element refs via `data-cp-ref` attributes
 
-Token 自动认证：Extension 从 `http://localhost:9333/token` 自动获取，无需手动配置。
+Token auto-auth: Extension fetches token from `http://localhost:9333/token` automatically. No manual configuration needed.
 
-## 设计文档
+## Design Document
 
-详细的架构设计和决策记录：[`docs/superpowers/specs/2026-03-25-chrome-pilot-design.md`](docs/superpowers/specs/2026-03-25-chrome-pilot-design.md)
+Detailed architecture and decision log: [`docs/superpowers/specs/2026-03-25-chrome-pilot-design.md`](docs/superpowers/specs/2026-03-25-chrome-pilot-design.md)
