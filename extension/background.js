@@ -5,7 +5,7 @@
  *  1. Ensure the Offscreen Document is always alive.
  *  2. Route commands received from the daemon to the appropriate Chrome API.
  *  3. Forward tab-change events to the daemon via the Offscreen Document.
- *  4. Manage the auth token in chrome.storage.local.
+ *  4. Token is auto-fetched by offscreen.js from daemon HTTP endpoint.
  */
 
 'use strict';
@@ -64,17 +64,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     checkOffscreenLiveness();
   }
 });
-
-// ─── Token management ─────────────────────────────────────────────────────
-
-async function getToken() {
-  const result = await chrome.storage.local.get('token');
-  return result.token ?? null;
-}
-
-async function setToken(token) {
-  await chrome.storage.local.set({ token });
-}
 
 // ─── Send result/event back to daemon via offscreen ───────────────────────
 
@@ -344,16 +333,6 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 // ─── Message router ────────────────────────────────────────────────────────
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type === 'get-token') {
-    getToken().then((token) => sendResponse({ token }));
-    return true; // async
-  }
-
-  if (message.type === 'set-token') {
-    setToken(message.token).then(() => sendResponse({ ok: true }));
-    return true;
-  }
-
   if (message.type === 'daemon-command') {
     handleCommand(message.payload);
     sendResponse({ ok: true });

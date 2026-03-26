@@ -38,8 +38,9 @@ type Daemon struct {
 	snapStore  *snapshot.Store
 	tmpManager interface{} // nil until tmpfile task is implemented
 	session    *SessionState
-	pidFile    string
-	tokenFile  string
+	token     string
+	pidFile   string
+	tokenFile string
 	idleTimer  *time.Timer
 	done       chan struct{}
 	closeOnce  sync.Once
@@ -74,6 +75,7 @@ func New(cfg *config.Config, dataDir string) (*Daemon, error) {
 		wsServer:  wsSrv,
 		snapStore: snapStore,
 		session:   &SessionState{},
+		token:     token,
 		pidFile:   filepath.Join(dataDir, "daemon.pid"),
 		tokenFile: tokenFile,
 		done:      make(chan struct{}),
@@ -158,6 +160,11 @@ func (d *Daemon) Start() error {
 	if d.cfg.WSPort > 0 {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/ws", d.wsServer.HandleWS)
+		mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Write([]byte(d.token))
+		})
 		addr := fmt.Sprintf(":%d", d.cfg.WSPort)
 		httpSrv := &http.Server{Addr: addr, Handler: mux}
 		go func() {

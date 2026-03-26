@@ -20,19 +20,14 @@ let reconnectDelay = RECONNECT_BASE_MS;
 let heartbeatTimer = null;
 let isConnected = false;
 
-// ─── Token retrieval ───────────────────────────────────────────────────────
+// ─── Token retrieval (auto-fetch from daemon HTTP endpoint) ──────────────
 
-function getToken() {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'get-token' }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.warn('[offscreen] get-token error:', chrome.runtime.lastError.message);
-        resolve(null);
-      } else {
-        resolve(response?.token ?? null);
-      }
-    });
-  });
+async function getToken() {
+  try {
+    const resp = await fetch('http://localhost:9333/token');
+    if (resp.ok) return await resp.text();
+  } catch (_) { /* daemon not running yet */ }
+  return null;
 }
 
 // ─── Heartbeat ─────────────────────────────────────────────────────────────
@@ -41,7 +36,7 @@ function startHeartbeat() {
   stopHeartbeat();
   heartbeatTimer = setInterval(() => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'ping' }));
+      ws.send(JSON.stringify({ method: 'ping' }));
     }
   }, HEARTBEAT_INTERVAL_MS);
 }
@@ -65,8 +60,8 @@ async function connect() {
     isConnected = true;
     reconnectDelay = RECONNECT_BASE_MS;
 
-    // Authenticate immediately after connection
-    ws.send(JSON.stringify({ type: 'auth', token: token || '' }));
+    // Authenticate immediately after connection (format must match wsserver.go)
+    ws.send(JSON.stringify({ method: 'auth', params: { token: token || '' } }));
     startHeartbeat();
 
     // Notify background that we are online
@@ -82,16 +77,17 @@ async function connect() {
       return;
     }
 
-    if (msg.type === 'auth-response') {
-      if (!msg.ok) {
-        console.error('[offscreen] Auth rejected by daemon');
-      } else {
+    // Auth response from wsserver.go: {method: "auth", result: {ok: true}}
+    if (msg.method === 'auth') {
+      if (msg.result?.ok) {
         console.log('[offscreen] Auth accepted');
+      } else {
+        console.error('[offscreen] Auth rejected by daemon:', msg.error);
       }
       return;
     }
 
-    if (msg.type === 'pong') {
+    if (msg.method === 'pong' || msg.type === 'pong') {
       // Heartbeat acknowledged – nothing to do
       return;
     }
