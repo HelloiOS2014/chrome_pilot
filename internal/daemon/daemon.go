@@ -100,8 +100,8 @@ func (d *Daemon) Start() error {
 		return fmt.Errorf("daemon: write pid: %w", err)
 	}
 
-	// Register built-in RPC handlers.
-	d.registerHandlers()
+	// Register all RPC handlers.
+	d.RegisterHandlers()
 
 	// Hook idle timer reset into the RPC server activity callback.
 	idleTimeout, err := time.ParseDuration(d.cfg.IdleTimeout)
@@ -253,26 +253,6 @@ func (d *Daemon) SnapStore() *snapshot.Store {
 // ---------------------------------------------------------------------------
 // internal helpers
 // ---------------------------------------------------------------------------
-
-// registerHandlers installs the built-in "ping" and "status" RPC handlers.
-func (d *Daemon) registerHandlers() {
-	d.rpcServer.Register("ping", func(_ json.RawMessage) (interface{}, error) {
-		return "pong", nil
-	})
-
-	d.rpcServer.Register("status", func(_ json.RawMessage) (interface{}, error) {
-		extStatus := "not connected"
-		if d.wsServer.IsConnected() {
-			extStatus = "connected"
-		}
-		return map[string]interface{}{
-			"daemon":    "running",
-			"pid":       strconv.Itoa(os.Getpid()),
-			"extension": extStatus,
-			"ws_port":   d.cfg.WSPort,
-		}, nil
-	})
-}
 
 // writePID writes the current process ID to the PID file.
 func (d *Daemon) writePID() error {
